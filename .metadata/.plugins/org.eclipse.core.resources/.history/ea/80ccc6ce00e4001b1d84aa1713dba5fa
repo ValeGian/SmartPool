@@ -1,0 +1,9 @@
+DbUsername=root
+DbPassword=root
+DbIp=localhost
+DbPort=3306
+DbName=smart_pool
+LowerCl=22
+UpperCl=37
+LowerTemp=1000
+UpperTemp=4000

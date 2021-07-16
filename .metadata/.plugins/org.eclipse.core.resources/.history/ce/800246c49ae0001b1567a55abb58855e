@@ -1,0 +1,39 @@
+package iot.unipi.it;
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+public class MqttSubscriber implements MqttCallback {
+	
+	public MqttSubscriber() throws MqttException {
+        String topic        = "test";
+        String broker       = "tcp://127.0.0.1:1883";
+        String clientId     = "JavaApp";
+		
+		MqttClient mqttClient = new MqttClient(broker, clientId);
+        System.out.println("Connecting to broker: "+broker);
+        
+        mqttClient.setCallback( this );
+        System.out.println("After Callback: "+broker);
+        mqttClient.connect();
+        System.out.println("After Connect: "+broker);
+        mqttClient.subscribe(topic);
+        System.out.println("After Subscribe: "+broker);
+	}
+
+	public void connectionLost(Throwable cause) {
+		// TODO Auto-generated method stub
+	}
+
+	public void messageArrived(String topic, MqttMessage message) throws Exception {
+        System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
+	}
+
+	public void deliveryComplete(IMqttDeliveryToken token) {
+		// TODO Auto-generated method stub
+	}
+
+}

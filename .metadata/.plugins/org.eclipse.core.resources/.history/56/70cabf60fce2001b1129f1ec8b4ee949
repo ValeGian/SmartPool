@@ -1,0 +1,149 @@
+package iot.unipi.it;
+
+import java.sql.SQLException;
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
+
+public class CollectorMqttClient implements MqttCallback{
+	
+	private final String broker = "tcp://127.0.0.1:1883";
+	private final String clientId = "JavaApp";
+	
+	private final String tempSubTopic = "temperature";
+	private final String tempPubTopic = "temperature-actuator";
+	
+	private final String chlorineSubTopic = "chlorine";
+	private final String chlorinePubTopic = "chlorine-actuator";
+	
+	private MqttClient mqttClient = null;
+
+	// Limit temperatures in Celsius
+	private final int lowerTemp = 22;
+	private final int upperTemp = 37;
+	
+	public CollectorMqttClient() throws InterruptedException {
+		do {
+			try {
+				this.mqttClient = new MqttClient(this.broker,this.clientId);
+		        System.out.println("Connecting to broker: "+broker);
+		        
+				this.mqttClient.setCallback( this );
+				this.mqttClient.connect();
+				
+				this.mqttClient.subscribe(this.tempSubTopic);
+		        System.out.println("Subscribed to topic: "+this.tempSubTopic);
+		        
+				this.mqttClient.subscribe(this.chlorineSubTopic);
+		        System.out.println("Subscribed to topic: "+this.chlorineSubTopic);
+			}catch(MqttException me) {
+				System.out.println("I could not connect, Retrying ...");
+			}
+		}while(!this.mqttClient.isConnected());
+	}
+	
+	public void publish(final String topic, final String content) throws MqttException{
+		try {
+			MqttMessage message = new MqttMessage(content.getBytes());
+			this.mqttClient.publish(topic, message);
+		} catch(MqttException me) {
+			me.printStackTrace();
+		}
+	}
+	
+	public void connectionLost(Throwable cause) {
+		System.out.println("Connection is broken: " + cause);
+		int timeWindow = 3000;
+		while (!this.mqttClient.isConnected()) {
+			try {
+				System.out.println("Trying to reconnect in " + timeWindow/1000 + " seconds.");
+				Thread.sleep(timeWindow);
+				System.out.println("Reconnecting ...");
+				timeWindow *= 2;
+				this.mqttClient.connect();
+				
+				this.mqttClient.subscribe(this.tempSubTopic);
+				this.mqttClient.subscribe(this.chlorineSubTopic);
+				System.out.println("Connection is restored");
+			}catch(MqttException me) {
+				System.out.println("I could not connect");
+			} catch (InterruptedException e) {
+				System.out.println("I could not connect");
+			}
+		}
+	}
+
+	public void messageArrived(String topic, MqttMessage message) throws Exception {
+		System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
+		byte[] payload = message.getPayload();
+		
+		try {
+			JSONObject sensorMessage = (JSONObject) JSONValue.parseWithException(new String(payload));
+			
+			if(topic.equals(this.tempSubTopic)) 
+			{
+				if (sensorMessage.containsKey("node")
+					&& sensorMessage.containsKey("temperature")
+					&& sensorMessage.containsKey("unit")
+					) {
+					Integer numericValue = Integer.parseInt(sensorMessage.get("temperature").toString());
+					String nodeId = sensorMessage.get("node").toString();
+					
+					String unit = sensorMessage.get("unit").toString();
+					if(unit.equals("F")) {
+						numericValue = convertFToC(numericValue);
+					}
+					System.out.println("Gradi: " + numericValue);
+					boolean on = false;
+					String reply;
+					if (numericValue < lowerTemp || numericValue > upperTemp) {
+						System.out.println("Dangerous");
+						reply = "ON";
+						on = true;
+					}
+					else {
+						System.out.println("Safe");
+						reply = "OFF";
+						on = false;
+					}
+					publish(this.tempPubTopic, reply);
+					/*System.out.println("Writing to DB: " + ("Node: "+ "mqtt://"+nodeId+
+	                                                "\tvalue: "+numericValue+
+	                                                " celsius\talarm on? "+on));
+	
+					try {
+						Collector.db.addReading("mqtt1://"+nodeId, timestamp, numericValue, on);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}*/
+				} else {
+					System.out.println("Garbage data from sensor");
+				}	
+			} else if (topic.equals(this.chlorineSubTopic)) {
+				
+			} else {
+				System.out.println(String.format("Unknown topic: [%s] %s", topic, new String(payload)));
+			}
+		} catch (ParseException e) {
+			System.out.println(String.format("Received badly formatted message: [%s] %s", topic, new String(payload)));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void deliveryComplete(IMqttDeliveryToken token) {
+		System.out.println("Delievery Complete");
+		
+	}
+	
+	private int convertFToC(final int fahrenheit) {
+		return (fahrenheit - 32) * 5 / 9;
+	}
+
+}

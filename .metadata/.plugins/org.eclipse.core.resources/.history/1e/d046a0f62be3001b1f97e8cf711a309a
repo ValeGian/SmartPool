@@ -1,0 +1,116 @@
+package iot.unipi.it;
+
+import java.sql.*;
+
+public class DbManager {
+	private static final ConfigurationReader configurationReader = ConfigurationReader.getInstance();
+	private static DbManager instance = null;
+	
+	public static DbManager getInstance()
+    {
+        if (instance == null)
+            instance = new DbManager();
+
+        return instance;
+    }
+
+    @SuppressWarnings("finally")
+	private static Connection makeJDBCConnection() {
+        Connection databaseConnection = null;
+        
+        String databaseIP = configurationReader.getDbIp();
+        String databasePort = configurationReader.getDbPort();
+        String databaseUsername = configurationReader.getDbUsername();
+        String databasePassword = configurationReader.getDbPassword();
+        String databaseName = configurationReader.getDbName();
+        
+        
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");//checks if the Driver class exists (correctly available)
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return databaseConnection;
+        }
+        
+        try {
+            // DriverManager: The basic service for managing a set of JDBC drivers.
+            databaseConnection = DriverManager.getConnection(
+                    "jdbc:mysql://" + databaseIP + ":" + databasePort +
+                            "/" + databaseName + "?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=CET",
+                    databaseUsername,
+                    databasePassword);
+            //The Driver Manager provides the connection specified in the parameter string
+            if (databaseConnection == null) {
+                System.err.println("Connection to Db failed");
+            }
+        } catch (SQLException e) {
+        	System.err.println("MySQL Connection Failed!\n");
+            e.printStackTrace();
+        }finally {
+            return databaseConnection;
+        }
+
+    }
+    
+    public static void logHydromassageON() {
+    	
+    	String insertQueryStatement = "INSERT INTO hydromassage_actuator () VALUES ()";
+        
+        try (Connection smartPoolConnection = makeJDBCConnection();
+        		PreparedStatement smartPoolPrepareStat = smartPoolConnection.prepareStatement(insertQueryStatement);
+           ) {
+        	                
+        	smartPoolPrepareStat.executeUpdate();
+            
+        } catch (SQLException sqlex) {
+            sqlex.printStackTrace();
+        }
+    }
+    
+    
+    public static void logHydromassageOFF() {
+    	
+    	String getQueryStatement = "SELECT id FROM hydromassage_actuator ORDER BY start_time DESC LIMIT 1;";
+    	String updateQueryStatement = "UPDATE hydromassage_actuator SET finish_time = ? WHERE id = ?";
+        
+        int idToModify;
+    	try (Connection smartPoolConnection = makeJDBCConnection();
+        		PreparedStatement smartPoolPrepareStat = smartPoolConnection.prepareStatement(getQueryStatement);
+                PreparedStatement smartPoolUpdatePrepareStat = smartPoolConnection.prepareStatement(updateQueryStatement);
+        		ResultSet rs = smartPoolPrepareStat.executeQuery();
+           ) {
+        	if (rs.next()) {
+        		idToModify = rs.getInt("id"); 	      
+        	
+	        	Date date = new Date(System.currentTimeMillis());
+	        	Timestamp timestamp = new Timestamp(date.getTime());
+	        	
+	        	smartPoolUpdatePrepareStat.setTimestamp(1, timestamp);
+	        	smartPoolUpdatePrepareStat.setInt(2, idToModify);
+	        	
+	        	smartPoolUpdatePrepareStat.executeUpdate();
+        	}
+             
+        } catch (SQLException sqlex) {
+            sqlex.printStackTrace();
+        }
+    }
+
+
+    
+    public static void logPersonInThePool(boolean present) {
+    	
+    	String insertQueryStatement = "INSERT INTO presence_detection (presence) VALUES (?)";
+        
+        try (Connection smartPoolConnection = makeJDBCConnection();
+        		PreparedStatement smartPoolPrepareStat = smartPoolConnection.prepareStatement(insertQueryStatement);
+           ) {
+        	smartPoolPrepareStat.setBoolean(1, present);
+        	                
+        	smartPoolPrepareStat.executeUpdate();
+            
+        } catch (SQLException sqlex) {
+            sqlex.printStackTrace();
+        }
+    }
+}

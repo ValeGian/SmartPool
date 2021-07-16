@@ -1,0 +1,15 @@
+package iot.unipi.it;
+
+public class TemperatureCollector {
+
+	private CollectorMqttClient mc;
+	
+	
+	public TemperatureCollector(CollectorMqttClient mc) {
+		this.mc = mc;
+	}
+	
+	public double getAverageTemperature() {
+		return this.mc.getAverageTemperature();
+	}
+}

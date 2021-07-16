@@ -1,0 +1,117 @@
+package iot.unipi.it;
+
+import java.sql.SQLException;
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
+
+public class CollectorMqttClient implements MqttCallback{
+	
+	private String broker = "tcp://127.0.0.1:1883";
+	private String clientId = "JavaApp";
+	private String tempSubTopic = "temperature";
+	private String tempPubTopic = "temperature-actuator";
+	private MqttClient mqttClient = null;
+	
+	public CollectorMqttClient() throws InterruptedException {
+		do {
+			/*int timeWindow = 50000;
+			Thread.sleep(timeWindow);
+			*/
+			try {
+				this.mqttClient = new MqttClient(this.broker,this.clientId);
+		        System.out.println("Connecting to broker: "+broker);
+				this.mqttClient.setCallback( this );
+				this.mqttClient.connect();
+				this.mqttClient.subscribe(this.tempSubTopic);
+		        System.out.println("Subscribed to topic: "+this.tempSubTopic);
+			}catch(MqttException me) {
+				System.out.println("I could not connect, Retrying ...");
+			}
+		}while(!this.mqttClient.isConnected());
+	}
+	
+	public void publish(String content) throws MqttException{
+		try {
+			MqttMessage message = new MqttMessage(content.getBytes());
+			this.mqttClient.publish(this.tempPubTopic, message);
+		} catch(MqttException me) {
+			me.printStackTrace();
+		}
+	}
+	
+	public void connectionLost(Throwable cause) {
+		System.out.println("Connection is broken: " + cause);
+		int timeWindow = 3000;
+		while (!this.mqttClient.isConnected()) {
+			try {
+				System.out.println("Trying to reconnect in " + timeWindow/1000 + " seconds.");
+				Thread.sleep(timeWindow);
+				System.out.println("Reconnecting ...");
+				timeWindow *= 2;
+				this.mqttClient.connect();
+				this.mqttClient.subscribe(this.tempSubTopic);
+				System.out.println("Connection is restored");
+			}catch(MqttException me) {
+				System.out.println("I could not connect");
+			} catch (InterruptedException e) {
+				System.out.println("I could not connect");
+			}
+		}
+	}
+
+	public void messageArrived(String topic, MqttMessage message) throws Exception {
+		System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
+		byte[] payload = message.getPayload();
+		
+		try {
+			JSONObject sensorMessage = (JSONObject) JSONValue.parseWithException(new String(payload));
+			if (sensorMessage.containsKey("temperature")) {
+				Integer numericValue = Integer.parseInt(sensorMessage.get("temperature").toString());
+				String nodeId = sensorMessage.get("node").toString();
+				int lower = 22;
+				int upper = 37;
+				boolean on = false;
+				String reply;
+				if (numericValue < lower || numericValue > upper) {
+					System.out.println("Dangerous");
+					reply = "ON";
+					on = true;
+				}
+				else {
+					System.out.println("Safe");
+					reply = "OFF";
+					on = false;
+				}
+				publish(reply);
+				/*System.out.println("Writing to DB: " + ("Node: "+ "mqtt://"+nodeId+
+                                                "\tvalue: "+numericValue+
+                                                " celsius\talarm on? "+on));
+
+				try {
+					Collector.db.addReading("mqtt1://"+nodeId, timestamp, numericValue, on);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}*/
+			} else {
+				System.out.println("Garbage data from sensor");
+			}	
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void deliveryComplete(IMqttDeliveryToken token) {
+		System.out.println("Delievery Complete");
+		
+	}
+
+}

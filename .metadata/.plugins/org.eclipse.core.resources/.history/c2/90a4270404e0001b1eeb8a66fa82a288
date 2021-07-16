@@ -1,0 +1,39 @@
+package client.iot.unipi.it;
+
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+
+
+public class MyClient {
+
+	public static void main(String[] args) {
+        String topic        = "alert";
+        String content      = "Message from Java Client";
+        String broker       = "tcp://127.0.0.1:1883";
+        String clientId     = "JavaApp";
+        
+        try {
+            MqttClient sampleClient = new MqttClient(broker, clientId);
+            System.out.println("Connecting to broker: "+broker);
+            sampleClient.connect();
+            System.out.println("Connected");
+
+            System.out.println("Publishing message: "+content);
+            MqttMessage message = new MqttMessage(content.getBytes());
+
+            sampleClient.publish(topic, message);
+            System.out.println("Message published");
+            sampleClient.disconnect();
+            System.out.println("Disconnected");
+            System.exit(0);
+        } catch(MqttException me) {
+
+            me.printStackTrace();
+        }
+    }
+
+
+}

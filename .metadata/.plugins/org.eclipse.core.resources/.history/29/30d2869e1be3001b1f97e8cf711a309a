@@ -1,0 +1,19 @@
+package iot.unipi.it;
+
+public class Collector {
+	
+	public static void main(String[] args) throws InterruptedException{
+		CollectorMqttClient mc = new CollectorMqttClient();
+		
+		// to read inputs from terminal
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+		String command = "";
+
+		System.out.println("Welcome to AutoLight App!\nDigit '!ls' for command list...");
+		
+		while(true) {
+			
+		}
+	}
+}

@@ -1,0 +1,7 @@
+presenceSensorAddress=fd00::202:2:2:2
+hydromassageActuatorAddress=fd00::203:3:3:3
+DbUsername=root
+DbPassword=root
+DbIp=localhost
+DbPort=3306
+DbName=smart_pool

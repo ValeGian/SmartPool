@@ -1,0 +1,20 @@
+package iot.unipi.it;
+
+import org.eclipse.paho.client.mqttv3.MqttException;
+
+public class Test {
+	
+	public static void main(String[] args) {
+		System.out.println("Hello World!");
+		
+		try {
+        	
+			CollectorMqttClient cmc = new CollectorMqttClient();
+			
+
+        } catch(MqttException me) {
+
+            me.printStackTrace();
+        }
+	}
+}
