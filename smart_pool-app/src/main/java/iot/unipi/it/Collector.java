@@ -9,9 +9,9 @@ public class Collector {
 	
 	public static void main(String[] args) throws SocketException, InterruptedException{
 		
-		//CollectorMqttClient mc = new CollectorMqttClient();
-		//TemperatureCollector tc = new TemperatureCollector(mc);
-		//ChlorineCollector cc = new ChlorineCollector(mc);
+		CollectorMqttClient mc = new CollectorMqttClient();
+		TemperatureCollector tc = new TemperatureCollector(mc);
+		ChlorineCollector cc = new ChlorineCollector(mc);
 		
 		RegistrationServer rs = new RegistrationServer();
 		rs.start();
@@ -56,19 +56,19 @@ public class Collector {
 					
 				} else if (tokens[0].equals("!checkTemp")) 
 				{
-					//System.out.format("The temperature in the pool is of %f °C", tc.getAverageTemperature());		
+					System.out.format("The temperature in the pool is of %f °C", tc.getAverageTemperature());
 					
 				} else if (tokens[0].equals("!setTemp"))
 				{
-					//tc.setTemperatureBounds(Double.parseDouble(tokens[1]), Double.parseDouble(tokens[2]), tokens[3]);
+					tc.setTemperatureBounds(Double.parseDouble(tokens[1]), Double.parseDouble(tokens[2]), tokens[3]);
 					
 				} else if (tokens[0].equals("!checkCl")) 
 				{
-					//System.out.format("The chlorine level in the pool is of %f ppb", cc.getAverageChlorine());		
+					System.out.format("The chlorine level in the pool is of %f ppb", cc.getAverageChlorine());
 					
 				} else if (tokens[0].equals("!setCl"))
 				{
-					//cc.setChlorineBounds(Double.parseDouble(tokens[1]), Double.parseDouble(tokens[2]));
+					cc.setChlorineBounds(Double.parseDouble(tokens[1]), Double.parseDouble(tokens[2]));
 					
 				} else if (tokens[0].equals("!setPowerHydro")) 
 				{
@@ -93,10 +93,10 @@ public class Collector {
 					rs.stampPresenceSensors();
 					
 					System.out.println("Temperature sensors:\n");
-					//mc.stampTemperatureSensors();
+					mc.stampTemperatureSensors();
 					
 					System.out.println("Ph sensors:\n");
-					//mc.stampChlorineSensors();
+					mc.stampChlorineSensors();
 					
 				} 
 
