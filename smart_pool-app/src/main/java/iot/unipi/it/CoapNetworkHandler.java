@@ -16,6 +16,7 @@ public class CoapNetworkHandler {
 	
 	private List<CoapClient> clientPresenceSensorList = new ArrayList<CoapClient>();
 	private List<CoapObserveRelation> observePresenceList = new ArrayList<CoapObserveRelation>();
+	private int presenceDetected = 0;
 	
 	private CoapClient clientHydromassageActuator;
 	private String ipActuator;
@@ -56,18 +57,38 @@ public class CoapNetworkHandler {
 						String responseString = response.getResponseText();
 						
 						if (responseString.equals("ON")) {
-							System.out.println("Movement detected: hydromassage turned on");
-							System.out.println("");
-							SmartPoolDbManager.logPersonInThePool(true);
-							SmartPoolDbManager.logHydromassageON(powerHydro);						
-							toggleHydromassage("on");
+							System.out.println("Movement detected: ");
+							presenceDetected++;
+							if (presenceDetected == 1) {
+								System.out.print("hydromassage turned off");
+								SmartPoolDbManager.logPersonInThePool(true);
+								SmartPoolDbManager.logHydromassageON(powerHydro);	
+								toggleHydromassage("on");
+							}else if (presenceDetected > 1)
+								System.out.print("hydromassage already on");
+							else {
+								System.out.print(" unconsistent state of hydromassage, hydromassage turned off");
+								toggleHydromassage("off");
+								presenceDetected = 0;
+							}
 						}else if (responseString.equals("OFF")){
-							System.out.println("No movement: hydromassage turned off");
-							System.out.println("");
-							SmartPoolDbManager.logPersonInThePool(false);
-							SmartPoolDbManager.logHydromassageOFF();
-							toggleHydromassage("off");
+							System.out.println("No movement");
+							presenceDetected--;
+							if(presenceDetected == 0) {
+								System.out.print(" in all the pool: hydromassage turned off");
+								SmartPoolDbManager.logPersonInThePool(false);
+								SmartPoolDbManager.logHydromassageOFF();
+								toggleHydromassage("off");
+							} else if (presenceDetected > 1)
+								System.out.print(" in this section of the pool, but other movements detected: hydromassage still on");
+							else {
+								System.out.print(": unconsistent state of hydromassage, hydromassage turned off");
+								toggleHydromassage("off");
+								presenceDetected = 0;
+							}
+								
 						}
+						System.out.println("");
 					}			
 					
 					public void onError() {
