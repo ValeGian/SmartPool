@@ -26,4 +26,14 @@ On the CoAP network simulated with Cooja we then decided to deploy the sensor an
 ### Collector & Control Logic
 The Collector is responsible of accepting connection of CoAP devices and receiving updates from the MQTT Broker. In combination with it, we execute some control logic that allows:
 - Automatic management of actuators (e.g. automatic management of temperature regulators state)
-- Manual modifications to the actuators and some parameters used for the automatic management We provide the user with a CLI
+- Manual modifications to the actuators and some parameters used for the automatic management 
+
+We provide the user with a CLI with the following commands available:
+- !exit
+- !commands
+- !checkTemp
+- !setTemp <lower temperature> <upper temp> <unit[C or F]>
+- !checkCl
+- !setCl <lower level> <upper level>
+- !setPowerHydro <new power>
+- !getSensorsList
