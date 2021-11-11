@@ -2,7 +2,7 @@
 Project for the <i>'Internet of Things'</i> course. Please, check the [Documentation](Documentation.pdf) for a complete view. 
 
 ## Introduction
-Smart Pool is an application for the automatic and intelligent management of swimming pools.
+Smart Pool is an application for the automatic and intelligent management of swimming pools remotely through the use of sensors and actuators.
 It allows to automatically manage the pool temperature and the chlorine level.
 For facilities with hydromassage services, it allows the automated management of the
 water inlets.
